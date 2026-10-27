@@ -1,0 +1,49 @@
+{
+  "id": "./",
+  "name": "LIDA — Conecta. Comparte. Vive.",
+  "short_name": "LIDA",
+  "description": "Comunidad, mensajería, vídeos y juegos en una sola aplicación.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080b09",
+  "theme_color": "#080b09",
+  "categories": [
+    "social",
+    "entertainment",
+    "games"
+  ],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chat",
+      "short_name": "Chat",
+      "url": "./?section=chat"
+    },
+    {
+      "name": "Lida Reels",
+      "short_name": "Reels",
+      "url": "./?section=reels"
+    },
+    {
+      "name": "Lida Plays",
+      "short_name": "Plays",
+      "url": "./?section=plays"
+    }
+  ]
+}

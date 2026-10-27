@@ -1,0 +1,3 @@
+[functions.login-by-username]
+# This endpoint must accept unauthenticated login requests; it verifies the password against Supabase Auth server-side.
+verify_jwt = false
