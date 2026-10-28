@@ -54,7 +54,9 @@ function readState() {
 }
 function persistState(patch) { const next = { ...readState(), ...patch }; localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); return next; }
 async function hashDemoPassword(password, salt) { const bytes = new TextEncoder().encode(`${salt}:${password}`); const digest = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join(''); }
-function Logo({ size = 36, className = '' }) { return <img src="/lida-logo.png" width={size} height={size} className={`logo ${className}`} alt="Logotipo original de LIDA" />; }
+
+function Logo({ size = 36, className = '' }) { return <img src={`${import.meta.env.BASE_URL}lida-logo.png`} width={size} height={size} className={`logo ${className}`} alt="Logotipo original de LIDA" />; }
+
 function Avatar({ name = 'L', size = 'normal', online = false }) { return <span className={`avatar avatar-${size}`}>{name.trim().slice(0, 1).toUpperCase()}<i className={online ? 'online-dot' : 'hidden'} /></span>; }
 function Toast({ message, onClose }) { useEffect(() => { if (!message) return; const id = setTimeout(onClose, 3600); return () => clearTimeout(id); }, [message, onClose]); if (!message) return null; return <div className="toast" role="status"><Check size={17} />{message}<button onClick={onClose} aria-label="Cerrar aviso"><X size={15}/></button></div>; }
 function Modal({ title, children, onClose, wide = false }) { useEffect(() => { const fn = e => e.key === 'Escape' && onClose(); window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn); }, [onClose]); return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}><section className={`modal-card ${wide ? 'modal-wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}><div className="modal-head"><h2>{title}</h2><button className="icon-button" onClick={onClose} aria-label="Cerrar"><X/></button></div>{children}</section></div>; }
