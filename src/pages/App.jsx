@@ -210,3 +210,4 @@ export default function App() {
   if (splash) return <Splash onDone={endSplash}/>;
   if (loading || !authReady) return <div className="loading"><Logo size={70}/><p>Preparando tu espacio…</p></div>;
   return user ? <AppShell user={user} onLogout={logout}/> : <Auth onSignedIn={setUser} toast={showGlobalToast}/>;
+}
