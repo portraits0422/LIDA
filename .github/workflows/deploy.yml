@@ -1,4 +1,4 @@
-```yaml
+
 name: Deploy LIDA to GitHub Pages
 
 on:
@@ -47,5 +47,4 @@ jobs:
 
       - name: Deploy site
         uses: actions/deploy-pages@v4
-```
 
