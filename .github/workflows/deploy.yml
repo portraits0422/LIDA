@@ -1,11 +1,10 @@
-
+```yaml
 name: Deploy LIDA to GitHub Pages
 
 on:
   push:
     branches:
       - main
-      - integrar-chat-supabase
   workflow_dispatch:
 
 permissions:
@@ -32,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-           - name: Build LIDA
+      - name: Build LIDA
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
@@ -48,4 +47,5 @@ jobs:
 
       - name: Deploy site
         uses: actions/deploy-pages@v4
+```
 
