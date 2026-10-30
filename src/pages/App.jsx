@@ -226,11 +226,214 @@ function AppShell({ user, onLogout, toast }) {
   const content = showProfile ? <SettingsPage user={user} state={state} update={update} toast={showToast} onLogout={onLogout} onReplayTour={() => setTourStep(0)}/> : tab === 'community' ? <Community state={state} update={update} toast={showToast} user={user}/> : tab === 'chat' ? <Chat state={state} update={update} toast={showToast} user={user}/> : tab === 'reels' ? <Reels state={state} update={update} toast={showToast}/> : tab === 'plays' ? <Plays state={state} update={update} toast={showToast}/> : <SettingsPage user={user} state={state} update={update} toast={showToast} onLogout={onLogout} onReplayTour={() => setTourStep(0)}/>;
   return <div className={`app-shell ${state.reducedMotion ? 'reduce-motion' : ''}`}><header className="topbar"><button className="brand-button" onClick={() => { navigate('community'); }} aria-label="Ir a Lida Comunidad"><Logo size={42}/><span>LIDA</span></button><div className="topbar-center"><span className="online-indicator"><i className={online ? 'is-online' : 'is-offline'}/>{online ? 'Conectado' : 'Sin conexión'}</span></div><div className="top-actions"><button className="icon-button" title="Buscar en LIDA" aria-label="Buscar en LIDA" onClick={() => setShowSearch(true)}><Search/></button><button className="icon-button install-action" title="Instalar LIDA" aria-label="Instalar LIDA" onClick={async () => { if (installPrompt) { await installPrompt.prompt(); setInstallPrompt(null); } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) showToast('Para instalar LIDA en iPhone: abre Compartir en Safari y elige “Añadir a pantalla de inicio”.'); else showToast('Abre el menú del navegador y elige “Instalar aplicación” o “Añadir a pantalla de inicio”.'); }}><Download/></button><div className="notification-anchor"><button className={`icon-button ${notif ? 'active' : ''}`} aria-label="Notificaciones" onClick={() => setNotif(v => !v)}><Bell/>{unread > 0 && <i className="notification-dot"/>}</button>{notif && <NotificationPanel onClose={() => setNotif(false)} notifications={notifications} onMarkAll={() => setNotifications(ns => ns.map(n => ({ ...n, read: true })))} onOpen={n => { setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x)); navigate(n.kind === 'game' ? 'plays' : n.kind === 'chat' ? 'chat' : 'community'); }} toast={showToast}/>}</div><button className="avatar top-avatar" title="Perfil y ajustes" aria-label="Perfil y ajustes" onClick={() => { setShowProfile(v => !v); setTab('settings'); }}><UserRound size={19}/></button><button className="icon-button mobile-menu-button" aria-label="Más opciones" onClick={() => setMobileMenu(v => !v)}><Menu/></button></div></header>{mobileMenu && <div className="mobile-quick-menu"><button onClick={() => { setShowSearch(true); setMobileMenu(false); }}><Search size={17}/> Buscar</button><button onClick={async () => { setMobileMenu(false); if (installPrompt) { await installPrompt.prompt(); setInstallPrompt(null); } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) showToast('En Safari: Compartir → Añadir a pantalla de inicio.'); else showToast('En el menú del navegador, elige Instalar aplicación o Añadir a pantalla de inicio.'); }}><Download size={17}/> Instalar LIDA</button><button onClick={() => { navigate('settings'); setMobileMenu(false); }}><Settings size={17}/> Ajustes</button><button onClick={() => { setTourStep(0); setMobileMenu(false); }}><CircleHelp size={17}/> Guía</button><button onClick={onLogout}><LogOut size={17}/> Cerrar sesión</button></div>}{!online && <div className="offline-banner"><WifiOff size={15}/> Estás sin conexión. El contenido local sigue disponible; los mensajes y publicaciones no se sincronizarán.</div>}<main className="main-content">{content}</main><nav className="bottom-nav" aria-label="Navegación principal">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={`nav-item ${tab === id && !showProfile ? 'active' : ''}`} onClick={() => navigate(id)} aria-current={tab === id && !showProfile ? 'page' : undefined}><Icon size={22} strokeWidth={tab === id && !showProfile ? 2.4 : 1.8}/><span>{label}</span></button>)}</nav>{installPrompt && <div className="install-banner"><div><b>Instala LIDA</b><small>Accede desde tu pantalla de inicio.</small></div><button className="primary-button compact" onClick={async () => { await installPrompt.prompt(); setInstallPrompt(null); }}>Instalar</button><button className="icon-button" onClick={() => setInstallPrompt(null)} aria-label="Cerrar"><X size={15}/></button></div>}{tourStep >= 0 && <Tour step={tourStep} setStep={setTourStep} onFinish={finishTour}/ >}{showSearch && <GlobalSearch onClose={() => setShowSearch(false)} onGo={navigate}/>}<Toast message={toastMsg} onClose={() => setToastMsg('')}/></div>;
 }
-export default function App() {
-  const [user, setUser] = useState(null); const [loading, setLoading] = useState(true); const [splash, setSplash] = useState(true); const [authReady, setAuthReady] = useState(false); const [globalToast, setGlobalToast] = useState(''); const endSplash = useCallback(() => setSplash(false), []); const showGlobalToast = useCallback(message => setGlobalToast(message), []);
-  useEffect(() => { if (!supabase) { const demoUser = readState().demoUser; if (demoUser) setUser(demoUser); setLoading(false); setAuthReady(true); return; } supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user || null); setLoading(false); setAuthReady(true); }).catch(() => { setLoading(false); setAuthReady(true); }); const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user || null)); return () => subscription.unsubscribe(); }, []);
-  async function logout() { if (supabase) await supabase.auth.signOut(); persistState({ demoUser: null }); setUser(null); }
-  if (splash) return <Splash onDone={endSplash}/>;
-  if (loading || !authReady) return <div className="loading"><Logo size={70}/><p>Preparando tu espacio…</p></div>;
-  return user ? <AppShell user={user} onLogout={logout}/> : <Auth onSignedIn={setUser} toast={showGlobalToast}/>;
+
+function InstallPage() {
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installed, setInstalled] = useState(
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+  );
+  const [message, setMessage] = useState('');
+
+  const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+  useEffect(() => {
+    const handlePrompt = event => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+
+    const handleInstalled = () => {
+      setInstalled(true);
+      setInstallPrompt(null);
+      setMessage('¡LIDA se ha instalado correctamente! 💚');
+    };
+
+    window.addEventListener('beforeinstallprompt', handlePrompt);
+    window.addEventListener('appinstalled', handleInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handlePrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
+    };
+  }, []);
+
+  const openLida = () => {
+    window.location.href = import.meta.env.BASE_URL;
+  };
+
+  const installLida = async () => {
+    if (installed) {
+      openLida();
+      return;
+    }
+
+    if (installPrompt) {
+      installPrompt.prompt();
+      const result = await installPrompt.userChoice;
+      setInstallPrompt(null);
+
+      if (result.outcome === 'accepted') {
+        setMessage('¡Perfecto! Sigue la confirmación de instalación. 💚');
+      }
+      return;
+    }
+
+    if (isIOS) {
+      setMessage('Para instalar LIDA: pulsa Compartir en Safari y selecciona «Añadir a pantalla de inicio».');
+      return;
+    }
+
+    setMessage('Tu navegador todavía no ofrece la instalación automática. Abre el menú del navegador y busca «Instalar aplicación» o «Añadir a pantalla de inicio».');
+  };
+
+  return (
+    <main style={{
+      minHeight: '100vh',
+      background: '#050806',
+      color: '#ffffff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '28px',
+      boxSizing: 'border-box',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '390px',
+        textAlign: 'center',
+        padding: '34px 24px',
+        border: '1px solid rgba(0,255,102,0.28)',
+        borderRadius: '24px',
+        background: 'linear-gradient(145deg, #101812, #080b09)',
+        boxShadow: '0 0 45px rgba(0,255,102,0.10)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+          <Logo size={90} />
+        </div>
+
+        <h1 style={{
+          color: '#00ff66',
+          fontSize: '30px',
+          margin: '0 0 14px',
+          letterSpacing: '3px'
+        }}>
+          LIDA
+        </h1>
+
+        <h2 style={{ fontSize: '23px', margin: '0 0 12px' }}>
+          Una sorpresa te espera
+        </h2>
+
+        <p style={{
+          color: '#b8c4bc',
+          lineHeight: 1.6,
+          fontSize: '15px',
+          marginBottom: '28px'
+        }}>
+          Instala LIDA y descubre una nueva experiencia. 💚
+        </p>
+
+        <button
+          onClick={installLida}
+          style={{
+            width: '100%',
+            padding: '17px',
+            border: 'none',
+            borderRadius: '13px',
+            background: '#00ff66',
+            color: '#041108',
+            fontWeight: 'bold',
+            fontSize: '16px',
+            letterSpacing: '1px',
+            cursor: 'pointer',
+            boxShadow: '0 0 22px rgba(0,255,102,0.25)'
+          }}
+        >
+          {installed ? 'ABRIR LIDA' : 'INSTALAR LIDA'}
+        </button>
+
+        {message && (
+          <p style={{
+            color: '#00ff66',
+            fontSize: '14px',
+            lineHeight: 1.6,
+            marginTop: '20px'
+          }}>
+            {message}
+          </p>
+        )}
+
+        <p style={{
+          color: '#68756d',
+          fontSize: '11px',
+          marginTop: '28px'
+        }}>
+          TU ESPACIO. TU EXPERIENCIA. LIDA.
+        </p>
+      </div>
+    </main>
+  );
 }
+
+export default function App() {
+  const isInstallPage = window.location.pathname.replace(/\/+$/, '').endsWith('/install');
+
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [splash, setSplash] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
+  const [globalToast, setGlobalToast] = useState('');
+
+  const endSplash = useCallback(() => setSplash(false), []);
+  const showGlobalToast = useCallback(message => setGlobalToast(message), []);
+
+  useEffect(() => {
+    if (isInstallPage) return;
+
+    if (!supabase) {
+      const demoUser = readState().demoUser;
+      if (demoUser) setUser(demoUser);
+      setLoading(false);
+      setAuthReady(true);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+      setLoading(false);
+      setAuthReady(true);
+    }).catch(() => {
+      setLoading(false);
+      setAuthReady(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => setUser(session?.user || null)
+    );
+
+    return () => subscription.unsubscribe();
+  }, [isInstallPage]);
+
+  async function logout() {
+    if (supabase) await supabase.auth.signOut();
+    persistState({ demoUser: null });
+    setUser(null);
+  }
+
+  if (isInstallPage) {
+    return <InstallPage />;
+  }
+
+  if (splash) return <Splash onDone={endSplash} />;
+
+  if (loading || !authReady) {
+    return <div className="loading"><Logo size={70}/><p>Preparando tu espacio…</p></div>;
+  }
+
+  return user
+    ? <AppShell user={user} onLogout={logout}/>
+    : <Auth onSignedIn={setUser} toast={showGlobalToast}/>;
+}
+
