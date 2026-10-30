@@ -70,27 +70,6 @@ function Tour({ step, setStep, onFinish }) { const item = guide[step]; return <d
 function Splash({ onDone }) { useEffect(() => { const id = setTimeout(onDone, 3600); return () => clearTimeout(id); }, [onDone]); return <main className="splash"><div className="splash-orbit"/><Logo size={150} className="splash-logo"/><span className="splash-word">LIDA</span><span className="splash-tag">Conecta. Comparte. Vive.</span><div className="splash-progress"><i/></div></main>; }
 function Auth({ onSignedIn, toast }) {
   
-m.type === 'audio' ? (
-  <div className="voice-note">
-    <VoiceNotePlayer message={m} toast={toast} />
-    <div className="waveform">
-      {Array.from({ length: 22 }, (_, i) => (
-        <i
-          key={i}
-          style={{ height: `${6 + (i * 17 % 18)}px` }}
-        />
-      ))}
-    </div>
-    <span>{m.seconds}s</span>
-    <button
-      className="speed-button"
-      onClick={() => setSpeed(s => s === 2 ? 1 : s + 0.5)}
-    >
-      {speed}×
-    </button>
-  </div>
-) : m.text
-
   const [mode, setMode] = useState('login'); const [identifier, setIdentifier] = useState(''); const [email, setEmail] = useState(''); const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [showPass, setShowPass] = useState(false); const [busy, setBusy] = useState(false); const [message, setMessage] = useState('');
   async function submit(e) {
     e.preventDefault(); setMessage(''); setBusy(true);
