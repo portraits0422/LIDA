@@ -378,7 +378,7 @@ function InstallPage() {
 }
 
 export default function App() {
-  const isInstallPage = window.location.pathname.replace(/\/+$/, '').endsWith('/install');
+ const isInstallPage = new URLSearchParams(window.location.search).has('install');
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
